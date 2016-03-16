@@ -13,13 +13,15 @@ import java.util.TimerTask;
 public class ProcessingApplet extends PApplet {
 
     private ControlP5 cp5;
-    private Knob QDotKnob;
-    private Button runButton;
+    private Knob QDotKnob, mDotKnob, setPointKnob;
+    private Button runButton, controlButton;
     private HeatedTankODE tank;
     private boolean running = false;
+    private boolean controlling = false;
     private Timer runTimer;
 
     private double time = 0;
+    private double setPoint = 20;
     private ArrayList<Double[]> pointList = new ArrayList<>();
 
     private PGraphics cg;
@@ -46,7 +48,7 @@ public class ProcessingApplet extends PApplet {
                 .setDragDirection(Knob.VERTICAL)
         ;
 
-        QDotKnob = cp5.addKnob("mDotKnob")
+        mDotKnob = cp5.addKnob("mDotKnob")
                 .setRange(0, 200)
                 .setValue((float) tank.getmDot())
                 .setPosition(50, 200)
@@ -54,8 +56,19 @@ public class ProcessingApplet extends PApplet {
                 .setDragDirection(Knob.VERTICAL)
         ;
 
+        setPointKnob = cp5.addKnob("setPointKnob")
+                .setRange(20, 50)
+                .setValue((float) setPoint)
+                .setPosition(150, 200)
+                .setRadius(40)
+                .setDragDirection(Knob.VERTICAL)
+        ;
+
         runButton = cp5.addButton("runButton")
                 .setPosition(55, 350);
+
+        controlButton = cp5.addButton("controlButton")
+                .setPosition(55, 400);
 
     }
 
@@ -106,6 +119,10 @@ public class ProcessingApplet extends PApplet {
         tank.setmDot(theValue);
     }
 
+    public void setPointKnob(int theValue) {
+        setPoint = theValue;
+    }
+
     public void runButton() {
 
         if (!running) {
@@ -117,8 +134,15 @@ public class ProcessingApplet extends PApplet {
                 public void run() {
                     time += 1.0;
                     tank.run();
-
                     pointList.add(new Double[]{time, tank.getTOut()});
+                    /// Controlling...
+                    if (controlling) {
+                        double valueToSet = tank.getQDot() * (1 + .01 * (setPoint - tank.getTOut()));
+                        tank.setQDot(valueToSet);
+                        System.out.println(valueToSet);
+                        QDotKnob.setValue((float) valueToSet);
+                    }
+
                 }
             }, 100, 100);
         } else {
@@ -126,4 +150,14 @@ public class ProcessingApplet extends PApplet {
             running = false;
         }
     }
+
+    public void controlButton() {
+        if (!controlling) {
+            controlling = true;
+        } else {
+            controlling = false;
+        }
+
+    }
+
 }

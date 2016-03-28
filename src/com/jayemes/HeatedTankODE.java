@@ -14,7 +14,6 @@ public class HeatedTankODE implements FirstOrderDifferentialEquations {
     private double g = 9.81; // m/s2
     private double kValve = 0.5; // Non dimensional
 
-
     public HeatedTankODE(double FIn, double TIn, double TOut, double QDot, double h, double aTank, double aOut) {
         this.FIn = FIn;
         this.TIn = TIn;

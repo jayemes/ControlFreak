@@ -1,13 +1,11 @@
 package com.jayemes;
 
 import controlP5.*;
-import controlP5.Button;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
 import processing.core.PApplet;
 import processing.core.PGraphics;
 import processing.core.PShape;
 
-import java.awt.*;
-import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -17,13 +15,13 @@ public class ProcessingApplet extends PApplet {
     private Knob QDotKnob, kValveKnob, FInKnob, tempSPKnob, hSPKnob;
     private Toggle runButton, controlTempButton, controlHButton;
     private Button configButton;
-    private HeatedTankODE tank;
     private Timer runTimer;
-    private Chart hChart, tChart;
     private Textlabel tChartLabel, hChartLabel;
-    private Group configGroup;
-    private Textfield tempKpField, levelKpField;
+    private Chart hChart, tChart;
 
+    private static ConfigApplet configApplet;
+
+    private HeatedTankODE tank;
     private boolean running = false;
     private boolean controllingTemp = false;
     private boolean controllingH = false;
@@ -31,17 +29,23 @@ public class ProcessingApplet extends PApplet {
     private double time = 0;
     private double tempSetPoint = 20;
     private double hSetPoint = 1;
-    private float tempKp = .01f;
-    private float levelKp = .5f;
 
-    private ArrayList<Double[]> pointList = new ArrayList<>();
+    ///// VARIABLES TO BE CONTROL BY THE USER IN CONFIG
+    float tempKp = 10f;
+    float tempKi = 1f;
+    int tempTau = 10;
+    float tempKd = 1f;
+    float levelKp = .5f;
 
     private PGraphics cg;
-    private Textlabel tempKpLabel, levelKpLabel;
 
     public static void main(String[] args) {
-        String[] a = {"MAIN"};
-        PApplet.runSketch(a, new ProcessingApplet());
+        ProcessingApplet pa = new ProcessingApplet();
+        PApplet.runSketch(new String[]{"MAIN"}, pa);
+
+        configApplet = new ConfigApplet(pa);
+        PApplet.runSketch(new String[]{"CONFIG"}, configApplet);
+        configApplet.hide();
     }
 
     public void settings() {
@@ -49,7 +53,6 @@ public class ProcessingApplet extends PApplet {
     }
 
     public void setup() {
-
         frameRate(30);
         tank = new HeatedTankODE(0.07d, 10, 10, 2000, 1, 0.1d, 0.015d);
 
@@ -80,7 +83,7 @@ public class ProcessingApplet extends PApplet {
         ;
 
         tempSPKnob = cp5.addKnob("tempSPKnob")
-                .setRange(20, 50)
+                .setRange(20, 70)
                 .setValue((float) tempSetPoint)
                 .setPosition(10, 250)
                 .setRadius(30)
@@ -107,45 +110,7 @@ public class ProcessingApplet extends PApplet {
                 .setPosition(100, 150)
                 .setLabel("Level\nControl");
 
-        configButton = cp5.addButton("configButton")
-                .setPosition(100, 300)
-                .setWidth(40)
-                .setLabel("Config");
-
-        configGroup = cp5.addGroup("configGroup")
-                .setSize(120, 90)
-                .setPosition(140, 300)
-                .setBackgroundColor(0)
-                .setMoveable(true)
-                .hideBar()
-                .hide();
-
-        tempKpField = cp5.addTextfield("tempKpField")
-                .setGroup("configGroup")
-                .setSize(50, 20)
-                .setPosition(10, 10)
-                .setText("" + tempKp)
-                .setInputFilter(Textfield.FLOAT)
-                .setLabel("Temp Kp");
-
-        tempKpLabel = cp5.addTextlabel("tempKpLabel")
-                .setGroup("configGroup")
-                .setPosition(70, 20)
-                .setValue("Kp: " + tempKp);
-
-        levelKpField = cp5.addTextfield("levelKpField")
-                .setGroup("configGroup")
-                .setSize(50, 20)
-                .setPosition(10, 50)
-                .setText("" + levelKp)
-                .setInputFilter(Textfield.FLOAT)
-                .setLabel("Level Kp");
-
-        levelKpLabel = cp5.addTextlabel("levelKpLabel")
-                .setGroup("configGroup")
-                .setPosition(70, 60)
-                .setValue("Kp: " + levelKp);
-
+        ///// CHARTS /////
         hChart = cp5.addChart("hChart")
                 .setPosition(180, 25)
                 .setSize(700, 200)
@@ -160,7 +125,13 @@ public class ProcessingApplet extends PApplet {
                 .setView(Chart.LINE)
                 .setColor(new CColor(0, color(50), 0, color(255), 0));
 
-        configGroup.bringToFront();
+
+        ///// CONFIGURATION PANEL /////
+        configButton = cp5.addButton("configButton")
+                .setPosition(100, 300)
+                .setWidth(40)
+                .setLabel("Config");
+
 
 /////// Series Definition ////////////////////////////////////////////
         hChart.addDataSet("h");
@@ -210,9 +181,9 @@ public class ProcessingApplet extends PApplet {
         tChartLabel.setValue(String.format("%.2f", tank.getTOut()));
         hChartLabel.setValue(String.format("%.3f", tank.getH()));
 
-        int level = (int) map((float) tank.getH(), 0, 5, 50, 550);
+        int level = (int) map((float) tank.getH(), 0, 8, 10, 410);
+        level = min(450, level);
         cg = drawTank(level, tank.getTOut());
-
         image(cg, 900, 75, 200, 400);
 
     }
@@ -239,16 +210,6 @@ public class ProcessingApplet extends PApplet {
         hSetPoint = theValue;
     }
 
-    public void tempKpField(String theValue) {
-        tempKp = Float.valueOf(theValue);
-        tempKpLabel.setValue("Kp: " + theValue);
-    }
-
-    public void levelKpField(String theValue) {
-        levelKp = Float.valueOf(theValue);
-        levelKpLabel.setValue("Kp: " + theValue);
-    }
-
 
     /////////////////////////////////////////////////////////////////////////////
 
@@ -272,7 +233,12 @@ public class ProcessingApplet extends PApplet {
     }
 
     public void configButton() {
-        configGroup.setVisible(!configGroup.isVisible());
+        if (configApplet.isShowing) {
+            configApplet.hide();
+        } else {
+            configApplet.show();
+        }
+
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -297,20 +263,24 @@ public class ProcessingApplet extends PApplet {
         PShape s = createShape();
         s.setFill(waterColor);
 
-        s.beginShape();
-        s.noStroke();
 
-        s.vertex(52 + 296, 550 - h);
-        s.vertex(52, 550 - h);
+        if (running) {
+            s.beginShape();
+            s.noStroke();
 
-        for (int i = 0; i < 10; i++) {
-            s.vertex(52 + 296 / 10 * i, 550 - h - random(5));
+            s.vertex(52 + 296, 550 - h);
+            s.vertex(52, 550 - h);
+
+            for (int i = 0; i < 10; i++) {
+                s.vertex(52 + 296 / 10 * i, 550 - h - random(5));
+            }
+
+            s.vertex(52 + 296, 550 - h - random(5));
+
+            s.endShape();
+            cg.shape(s);
         }
 
-        s.vertex(52 + 296, 550 - h - random(5));
-
-        s.endShape();
-        cg.shape(s);
         cg.endDraw();
         return cg;
 
@@ -321,7 +291,6 @@ public class ProcessingApplet extends PApplet {
         public void run() {
             time += 1.0;
             tank.run();
-            pointList.add(new Double[]{time, tank.getTOut()});
 
             hChart.push("h", (float) tank.getH());
             hChart.push("valveK", kValveKnob.getValue());
@@ -333,14 +302,34 @@ public class ProcessingApplet extends PApplet {
 
             /// Controlling...
             if (controllingTemp) {
-                double valueToSet = tank.getQDot() * (1 + tempKp * (tempSetPoint - tank.getTOut()));
+
+                ////// Integral calculation for pId
+                float integral = 0;
+                for (int i = 200 - tempTau; i < 200; i++) {
+                    integral += tempSetPoint - tChart.getValuesFrom("t")[i];
+                }
+
+                ////// DERIVATIVE CALCULATION FOR piD
+                SimpleRegression sr = new SimpleRegression();
+                for (int i = 200 - 5; i < 200; i++) {
+                    float error = (float) tempSetPoint - tChart.getValuesFrom("t")[i];
+                    sr.addData(i, error); // WARNING!!! Only valid for time-step = 1s
+                }
+
+                float slope = (float) sr.getSlope();
+
+                //double valueToSet = tank.getQDot() * (1 + tempKp * (tempSetPoint - tank.getTOut()));
+                //double valueToSet = tank.getQDot() * (1 + tempKp * integral);
+                //double valueToSet = tank.getQDot() + tempKp * (tempSetPoint - tank.getTOut());
+                double valueToSet = tank.getQDot() + tempKp * (tempSetPoint - tank.getTOut()) + tempKi * integral + tempKd * slope;
+
                 tank.setQDot(max((float) valueToSet, 100));
                 QDotKnob.setValue((float) valueToSet);
             }
 
             if (controllingH) {
                 double valueToSet = tank.getkValve() * (1 + levelKp * (hSetPoint - tank.getH()));
-                tank.setkValve(min(max((float) valueToSet, 0.1f),2f));
+                tank.setkValve(min(max((float) valueToSet, 0.1f), 2f));
                 kValveKnob.setValue((float) valueToSet);
             }
 

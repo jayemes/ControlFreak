@@ -10,6 +10,8 @@ public class ConfigApplet extends PApplet {
     ControlP5 cp5;
     private Textfield tempKpField, tempKiField, tempTauField, tempKdField;
     private Textlabel tempKpLabel, tempKiLabel, tempTauLabel, tempKdLabel;
+    private Button saveButton, loadButton;
+
 
     public ConfigApplet(ProcessingApplet parent) {
         this.parent = parent;
@@ -25,6 +27,12 @@ public class ConfigApplet extends PApplet {
 
         cp5 = new ControlP5(this);
 
+        saveButton = cp5.addButton("saveButton")
+                .setPosition(50, 300);
+
+        loadButton = cp5.addButton("loadButton")
+                .setPosition(150, 300);
+
         tempKpField = cp5.addTextfield("tempKpField")
                 .setSize(40, 20)
                 .setPosition(10, 10)
@@ -35,7 +43,7 @@ public class ConfigApplet extends PApplet {
 
         tempKpLabel = cp5.addTextlabel("tempKpLabel")
                 .setPosition(55, 15)
-                .setValue("[" + parent.tempKp +"]");
+                .setValue("[" + parent.tempKp + "]");
 
         tempKiField = cp5.addTextfield("tempKiField")
                 .setSize(40, 20)
@@ -47,7 +55,7 @@ public class ConfigApplet extends PApplet {
 
         tempKiLabel = cp5.addTextlabel("tempKiLabel")
                 .setPosition(145, 15)
-                .setValue("[" + parent.tempKi +"]");
+                .setValue("[" + parent.tempKi + "]");
 
         tempTauField = cp5.addTextfield("tempTauField")
                 .setSize(40, 20)
@@ -59,7 +67,7 @@ public class ConfigApplet extends PApplet {
 
         tempTauLabel = cp5.addTextlabel("tempTauLabel")
                 .setPosition(235, 15)
-                .setValue("[" + parent.tempTau +"]");
+                .setValue("[" + parent.tempTau + "]");
 
         tempKdField = cp5.addTextfield("tempKdField")
                 .setSize(40, 20)
@@ -71,7 +79,7 @@ public class ConfigApplet extends PApplet {
 
         tempKdLabel = cp5.addTextlabel("tempKdLabel")
                 .setPosition(325, 15)
-                .setValue("[" + parent.tempKd +"]");
+                .setValue("[" + parent.tempKd + "]");
 
 
 //        levelKpField = cp5.addTextfield("levelKpField")
@@ -87,35 +95,41 @@ public class ConfigApplet extends PApplet {
 //                .setPosition(70, 60)
 //                .setValue("Kp: " + levelKp);
 
-
     }
 
     ///// LISTENER FUNCTIONS /////
 
     public void tempKpField(String theValue) {
         parent.tempKp = Float.valueOf(theValue);
-        tempKpLabel.setValue("[" + parent.tempKp +"]");
+        tempKpLabel.setValue("[" + parent.tempKp + "]");
     }
 
     public void tempKiField(String theValue) {
         parent.tempKi = Float.valueOf(theValue);
-        tempKiLabel.setValue("[" + parent.tempKi +"]");
+        tempKiLabel.setValue("[" + parent.tempKi + "]");
     }
 
     public void tempTauField(String theValue) {
-        parent.tempTau =  Float.valueOf(theValue).intValue();
-        tempTauLabel.setValue("[" + parent.tempTau +"]");
+        parent.tempTau = Float.valueOf(theValue).intValue();
+        tempTauLabel.setValue("[" + parent.tempTau + "]");
     }
 
     public void tempKdField(String theValue) {
-        parent.tempKd =  Float.valueOf(theValue);
-        tempKdLabel.setValue("[" + parent.tempKd +"]");
+        parent.tempKd = Float.valueOf(theValue);
+        tempKdLabel.setValue("[" + parent.tempKd + "]");
     }
 
 //    public void levelKpField(String theValue) {
 //        levelKp = Float.valueOf(theValue);
 //        levelKpLabel.setValue("Kp: " + theValue);
 //    }
+
+    public void saveButton() {
+        cp5.saveProperties("default", "default");
+    }
+    public void loadButton() {
+        cp5.loadProperties("default");
+    }
 
     public void draw() {
         background(200, 100, 100);
